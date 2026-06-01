@@ -39,6 +39,34 @@ def apply_rule(expr_tree, production, non_terminals: set, n_u: int):
 
     new_tree.last_modified_node = target_node
 
+
+    # Prohibit self-nesting of INV and POWER
+    if 'inv' in production:
+        highest_psi = None
+        currI = target_node.parent.parent
+        while currI:
+            if currI.symbol == 'Ψ':
+                highest_psi = currI
+                break
+            currI = currI.parent
+        if highest_psi:
+            pass
+            if 'inv' in [ch.symbol for ch in highest_psi.children]:
+                return None
+    if 'pow' in production:
+        highest_psi = None
+        currI = target_node.parent.parent
+        while currI:
+            if currI.symbol == 'Ψ':
+                highest_psi = currI
+                break
+            currI = currI.parent
+        if highest_psi:
+            pass
+            if 'pow' in [ch.symbol for ch in highest_psi.children]:
+                return None
+
+
     curr = target_node
     highest_phi, highest_tau = None, None
 

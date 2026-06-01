@@ -1,71 +1,124 @@
-Observations:
-
+# SKELETONS
 
 
 1. Cases like C+L\*Atom\*Φ were problematic. The problem with previous simplification is that it needed to wait until the whole branch was fully resolved to realize that there was another Atom in the set of multipliers. Now, it is prohibited to add an Atom if another Atom multiplier exists.
-~~TODO~~: The same could be applied to sums.
 
-UPDATE: I implemented a similar function for sums.
+    ~~TODO~~: The same could be applied to sums.
+
+    UPDATE: I implemented a similar function for sums.
+
 
 2. Some cases like C+C\*L\*sin(L) were pruned because it identified it could be simplified into C+L\*sin(L). The problem is that C always appears at the beginning of a multiplication; thus, if an Atom is added as a multiplier, there will always be a simplification that is not prohibited. So those cases are transformed by removing the 'C\*' component before simplifying.
+
+
 3. Something similar happens to cases where 'C+C\*L' and 'C+C\*P' appear. They will be immediately transformed into 'L' and 'P' before simplification. This was implemented into function 'prune\_linear\_constants(s)' but the logic was moved into the function 'apply\_rule', which is more general (See Point 5).
+
+
 4. Cases like this 'C+L\*sin(C+P\*sin(C+P\*sin(C+C\*Atom\*Φ)))\*Φ' should be avoided. Because there are already 3 unary operators being used. The second Φ cannot take the form of an atom because there's an L at the beginning, and cannot take the form of a unary operator because we reached the limit already.  
-~~TODO~~: Before checking constraints, find all Φ symbols and do a checking similar to the one in apply\_rule(...): If within their corresponding multiplications there exists Atoms AND there are no more available unary operators, then 	 prune the tree.
-UPDATE: I implemented function check\_constraints\_mult. Now, cases like 'C+C\*sin(C+C\*sin(C+L\*sin(τ)\*Φ))' are detected and pruned early.
-~~TODO~~: The same must be applied to sums. For example, the path 'C+C\*sin(C+P\*sin(C+L\*sin(C+C\*Φ+τ)))'. Note that τ cannot (or shouldn't) be an Atom because the previous C\*Φ (or effectively, the previous Ω) could also take the value 	  of an atom. Thus, for cases where τ is a second-generation τ (it's parent is also a τ but the grandparent isn't), the only option to avoid being absorbed is using another unary operator; however, if we have already reached 	  the maximum number of unary ops allowed, we can prune the tree early.
-UPDATE: I implemented function check\_constraints\_add. Now, cases like 'C+C\*sin(L)\*sin(C+L\*sin(τ)+τ)' are detected and pruned early.
+
+    ~~TODO~~: Before checking constraints, find all Φ symbols and do a checking similar to the one in apply\_rule(...): If within their corresponding multiplications there exists Atoms AND there are no more available unary operators, then 	 prune the tree.
+
+    UPDATE: I implemented function check\_constraints\_mult. Now, cases like 'C+C\*sin(C+C\*sin(C+L\*sin(τ)\*Φ))' are detected and pruned early.
+
+    ~~TODO~~: The same must be applied to sums. For example, the path 'C+C\*sin(C+P\*sin(C+L\*sin(C+C\*Φ+τ)))'. Note that τ cannot (or shouldn't) be an Atom because the previous C\*Φ (or effectively, the previous Ω) could also take the value 	  of an atom. Thus, for cases where τ is a second-generation τ (it's parent is also a τ but the grandparent isn't), the only option to avoid being absorbed is using another unary operator; however, if we have already reached 	  the maximum number of unary ops allowed, we can prune the tree early.
+
+    UPDATE: I implemented function check\_constraints\_add. Now, cases like 'C+C\*sin(L)\*sin(C+L\*sin(τ)+τ)' are detected and pruned early.
+
+
 5. Cases like 'C\*sin(L) + L' are not appearing.
-UPDATE: The problem was that a case like this C+C\*sin(L)+C\*Ψ will eventually be converted into C+C\*sin(L)+C\*L or C+C\*sin(L)+L, which will be simplified into L+C\*sin(L). That simplification will be detected as not desired by the 'simplify' function. So, I updated the function 'apply\_rule' to absorb any 'C\*', 'L\*', or 'P\*' if an 'Atom' was added, and then, to absorb any subsequent 'C+', 'L+', or 'P+' that could be absorbed. As a consequence, the function 'prune\_linear\_constants(s)' is now useless and was removed.
-6. After Point 5, cases like 'C\*sin(L) + L' are STILL not appearing. I noticed that the grammar rules were not correct as it was not possible to have cases like C+Ω+τ since the beginning. Notice how the tree grows:
-C+Ω
-C+C\*Φ
-C+C\*Ψ
-C+C\*Ψ\*Φ
-Atom
-C+C\*sin(τ)
-C+Atom\*Φ
-C+C\*sin(τ)\*Φ
-~~TODO~~: Update grammar rule
-UPDATE: After updating the production rule, 'σ': \[ \['C', '+', 'Ω'], \['C', '+', 'Ω', '+', 'τ']], the tree grows as follows:
-C+Ω
-C+Ω+τ
-C+C\*Φ
-C+C\*Φ+τ
-C+C\*Ψ
-C+C\*Ψ\*Φ
-C+C\*Ψ+τ
-C+C\*Ψ\*Φ+τ
-Atom
-C+C\*sin(τ)
-C+Atom\*Φ
-C+C\*sin(τ)\*Φ
-7. TODO: Inverse operations should be avoided as soon as they are declared, instead of keep growing the tree waiting to simplify them when a fully-resolved state is reached.
 
-8. 
+   UPDATE: The problem was that a case like this C+C\*sin(L)+C\*Ψ will eventually be converted into C+C\*sin(L)+C\*L or C+C\*sin(L)+L, which will be simplified into L+C\*sin(L). That simplification will be detected as not desired by the 'simplify' function. So, I updated the function 'apply\_rule' to absorb any 'C\*', 'L\*', or 'P\*' if an 'Atom' was added, and then, to absorb any subsequent 'C+', 'L+', or 'P+' that could be absorbed. As a consequence, the function 'prune\_linear\_constants(s)' is now useless and was removed.
+   After Point 5, cases like 'C\*sin(L) + L' are STILL not appearing. I noticed that the grammar rules were not correct as it was not possible to have cases like C+Ω+τ since the beginning. Notice how the tree grows:
 
-&#x09;
+   C+Ω
+
+   C+C\*Φ
+   
+   C+C\*Ψ
+   
+   C+C\*Ψ\*Φ
+   
+   Atom
+   
+   C+C\*sin(τ)
+
+   C+Atom\*Φ
+   
+   C+C\*sin(τ)\*Φ
+   
+   ~~TODO~~: Update grammar rule
+   
+   UPDATE: After updating the production rule, 'σ': \[ \['C', '+', 'Ω'], \['C', '+', 'Ω', '+', 'τ']], the tree grows as follows:
+   
+   C+Ω
+   
+   C+Ω+τ
+   
+   C+C\*Φ
+   
+   C+C\*Φ+τ
+   
+   C+C\*Ψ
+   
+   C+C\*Ψ\*Φ
+   
+   C+C\*Ψ+τ
+   
+   C+C\*Ψ\*Φ+τ
+   
+   Atom
+   
+   C+C\*sin(τ)
+   
+   C+Atom\*Φ
+   
+   C+C\*sin(τ)\*Φ
+
+
+6. ~~**TODO**~~: Inverse operations should be avoided as soon as they are declared, instead of keep growing the tree waiting to simplify them when a fully-resolved state is reached.
+   
+   UPDATE: It turns out that these cases are not directly found.
+
+
+7. The POWER operator should not be applied directly to L or P: POWER(L)=P and POWER(P)=P.
+
+   ~~**TODO**~~: Directly check `expr_str` and find `pow(L)` or `pow(P)` 
+   UPDATE: I did it at the end of the main loop in `pipeline.py`. I called the operator `powu` to avoid problems with the original SymPy's Power operator. 
+
+
+8. **This might be arguable**, but I am considering that the inversion operator is an algebraic rational operator, not a transcendental one.
+As such, it should not count towards $N_D$ or $N_U$. The same applies to POWER: $\text{POWER}(x) = x^P$ only if $P \in \mathbb{Q}$ (rational).
+
+
+9. In response to the previous point, even if INV and POWER don't count towards $N_D$ or $N_U$, we should prohibited self-nesting cases; e.g. INV(C+C*INV(...))
+   
+   ~~**TODO**~~: Update function ```apply_rule```.  
+   UPDATE: I added a block to "Prohibit self-nesting of INV and POWER"
+
+
+10. Cases like this `L*inv(L)` or `P*inv(L)` must not happen. The first is obvious but the second is not. `P*inv(L)` would be equivalent to `P+C*inv(L)`.
+   
+      **TODO**: First, find out why `L*inv(L)` is not being simplified automatically.
+
+
+12. D
+
+
+# SAMPLING
 
 
 
-
-
-SAMPLING
-
-
-
-1. Cases like $\\arcsin(C\_1 \\cdot \\sin(C\_2 \\cdot x + C\_3) + C\_4)$ could be allowed. However, the restriction that should be imposed is $|C\_1| + |C\_4| \\leq 1$
+1. Cases like $\arcsin(C_1 \cdot \sin(C_2 \cdot x + C_3) + C_4)$ could be allowed. However, the restriction that should be imposed is $|C_1| + |C_4| \leq 1$
 2. Justification for nested sins (which was not allowed in previous work): 
-Kinematics and Robotics (Forward Kinematics): In a multi-jointed robotic arm (like a triple pendulum), the position of the end-effector depends on the angles of all previous joints. You will see deep compositions, but they look like: $$\\sin(\\theta\_1 + \\sin(\\theta\_2 + \\sin(\\theta\_3)))$$
-Frequency Modulation (FM Synthesis): In complex signal processing or acoustics, you can have cascading frequency modulation (e.g., Operator 1 modulates Operator 2, which modulates Operator 3). The equation might look like:$$\\sin(\\omega\_1 t + \\beta\_1 \\sin(\\omega\_2 t + \\beta\_2 \\sin(\\omega\_3 t)))$$
+
+    - Kinematics and Robotics (Forward Kinematics): In a multi-jointed robotic arm (like a triple pendulum), the position of the end-effector depends on the angles of all previous joints. You will see deep compositions, but they look like: $$\sin(\theta_1 + \sin(\theta_2 + \sin(\theta_3)))$$
+
+    - Frequency Modulation (FM Synthesis): In complex signal processing or acoustics, you can have cascading frequency modulation (e.g., Operator 1 modulates Operator 2, which modulates Operator 3). The equation might look like:$$\sin(\omega_1 t + \beta_1 \sin(\omega_2 t + \beta_2 \sin(\omega_3 t)))$$
 3. Discussion about nesting trigonometric and inverse operators:
-$C\_1 = 1 \\implies \\cos(\\arccos(x)) = x$
-$C\_1 = 2 \\implies \\cos(2 \\arccos(x)) = 2x^2 - 1$
-$C\_1 = 3 \\implies \\cos(3 \\arccos(x)) = 4x^3 - 3x$
-$\\cos(\\arcsin(x)) = \\sqrt{1 - x^2}$
-$\\tan(\\arcsin(x)) = \\frac{x}{\\sqrt{1 - x^2}}$
-4. 
-
-&#x09;
-
-
-
+$C_1 = 1 \implies \cos(\arccos(x)) = x$
+$C_1 = 2 \implies \cos(2 \arccos(x)) = 2x^2 - 1$
+$C_1 = 3 \implies \cos(3 \arccos(x)) = 4x^3 - 3x$
+$\cos(\arcsin(x)) = \sqrt{1 - x^2}$
+$\tan(\arcsin(x)) = \frac{x}{\sqrt{1 - x^2}}$
+4. Restrict transcendental operators (exp, sin, log) so they can only accept linear or low-degree polynomial inputs of depth 1 or 2 as arguments, while explicitly banning them from taking each other as direct arguments
+5. Connected to point 8 from the previous "Skeletons" section, the $\text{POWER}(x) = x^P$ operator is only allowed to sample rational values for $P$. For irrational exponent values, we already have the definition $x^P = \exp(P \cdot \ln(x))$
