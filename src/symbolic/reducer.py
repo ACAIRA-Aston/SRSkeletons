@@ -5,10 +5,26 @@ from src.utils.sympy_utils import absorb_constants
 from sympy import (Symbol, Abs, conjugate, Pow, log, exp, sqrt, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh,
                    asinh, acosh, atanh, Rational)
 
+
+class inv(sp.Function):
+    @classmethod
+    def eval(cls, x):
+        return 1/x
+
+    # Tells SymPy how to differentiate inv(x) -> -1/x^2
+    def _eval_derivative(self, s):
+        x = self.args[0]
+        return -1 / (x ** 2) * x.diff(s)
+
+    def _eval_evalf(self, prec):
+        x = self.args[0]
+        return (1 / x).evalf(prec)
+
+
 # Define standard placeholders as global SymPy symbols
 C, L, P = sp.symbols('C L P')
 # A local dictionary ensuring SymPy cleanly maps tokens to our designated symbols
-LOCAL_DICT = {'C': C, 'L': L, 'P': P}
+LOCAL_DICT = {'C': C, 'L': L, 'P': P, 'inv': inv}
 
 # ---------------------------------------------------------------------------
 # Helper functions
@@ -154,7 +170,7 @@ def simplify(expr_node):
     # Map the node structure to a flat string representation and parse it into SymPy
     if not isinstance(expr_node, sp.Expr):
         if isinstance(expr_node, str):
-            parsed_expr = sp.sympify(expr_node)
+            parsed_expr = sp.parse_expr(expr_node, local_dict=LOCAL_DICT)  # sp.sympify(expr_node)
         else:
             raw_str = _node_to_string(expr_node)
             parsed_expr = sp.parse_expr(raw_str, local_dict=LOCAL_DICT)

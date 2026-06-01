@@ -129,6 +129,9 @@ def _expr_type(expr) -> str | None:
         return max(ph, key=lambda t: TYPE_RANK[t])  # Returns the one with the max hierarchy
 
     if isinstance(expr, Mul):
+        # If a multiplier is Pow (i.e., if it's a division), then no simplification will be made
+        if any(isinstance(arg, Pow) for arg in expr.args):
+            return None
         types = [_expr_type(a) for a in expr.args]
         has_var  = any(t == 'var'  for t in types)
         has_none = any(t is  None  for t in types)
@@ -178,19 +181,25 @@ def _absorb_once(expr):
     #  Pow
     if isinstance(expr, Pow):  # Pow: C**n -> C,  placeholder**placeholder -> dominant
         b, e = expr.args
-        b_type = _expr_type(b)
-        # Any placeholder base to a constant/placeholder power → keep base
-        if b_type == 'C':
-            return sp.Symbol('C')
-        elif b_type == 'L':
-            return sp.Symbol('P') if (isinstance(b, sp.Symbol) and e.is_integer) else expr
-        elif b_type == 'P':
-            return b if (isinstance(b, sp.Symbol) and e.is_integer) else expr
+        if e > 0:
+            expr_type = _expr_type(b)
+            b_type = expr_type
+            # Any placeholder base to a constant/placeholder power → keep base
+            if b_type == 'C':
+                return sp.Symbol('C')
+            elif b_type == 'L':
+                return sp.Symbol('P') if (isinstance(b, sp.Symbol) and e.is_integer) else expr
+            elif b_type == 'P':
+                return b if (isinstance(b, sp.Symbol) and e.is_integer) else expr
         return expr
 
     #  Mul
     if isinstance(expr, Mul):
         args      = list(expr.args)
+        # If a multiplier is Pow (i.e., if it's a division), then no simplification will be made
+        if any(isinstance(arg, Pow) for arg in args):
+            return expr
+
         arg_types = [_expr_type(a) for a in args]
         ph_types  = [t for t in arg_types if t in TYPE_RANK]
         if not ph_types:

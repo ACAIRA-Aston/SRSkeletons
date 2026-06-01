@@ -13,7 +13,7 @@ class StructuralGrammar:
 
         self.start_symbol = 'σ'  # Start Symbol
         self.non_terminals: Set[str] = {'σ', 'τ', 'Ω', 'Φ', 'Ψ', 'Atom'}  # Non-Terminals
-        self.terminals: Set[str] = {'+', '*', '(', ')', 'C', 'L', 'P'}  # Terminal Symbols
+        self.terminals: Set[str] = {'+', '*', '(', ')', '/', 'C', 'L', 'P'}  # Terminal Symbols
         self.terminals.update(unary_operators)
         # Production Rules
         self.productions: Dict[str, List[List[str]]] = {
@@ -24,7 +24,8 @@ class StructuralGrammar:
             'Ω': [ ['C', '*', 'Φ'] ],
             'Φ': [ ['Ψ'],
                    ['Ψ', '*', 'Φ'] ],
-            'Ψ': [ ['Atom'] ] + [[op, '(', 'τ', ')'] for op in unary_operators],
+            'Ψ': [ ['Atom'] ] + [[op, '(', 'τ', ')'] for op in unary_operators ],
+            # 'Ψ': [ ['Atom'] ] + [[op, '(', 'τ', ')'] if op != 'inv' else ['/', '(', 'τ', ')'] for op in unary_operators ],
             'Atom': [ ['L'], ['P'] ]
         }
 

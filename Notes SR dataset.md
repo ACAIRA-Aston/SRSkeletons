@@ -96,9 +96,13 @@ As such, it should not count towards $N_D$ or $N_U$. The same applies to POWER: 
    UPDATE: I added a block to "Prohibit self-nesting of INV and POWER"
 
 
-10. Cases like this `L*inv(L)` or `P*inv(L)` must not happen. The first is obvious but the second is not. `P*inv(L)` would be equivalent to `P+C*inv(L)`.
+10. Cases like this `L*inv(L)` or `P*inv(L)` must not happen as they would be equivalent to `C+C*inv(L)` and `P+C*inv(L)`.
    
-      **TODO**: First, find out why `L*inv(L)` is not being simplified automatically.
+      ~~**TODO**~~: First, find out why `L*inv(L)` is not being simplified automatically.
+      
+      UPDATE: Because `inv` was not inherently defined in SymPy's dictionary. I added function `inv` in `reducer.py` and added it to `LOCAL_DICT`.
+
+      **TODO**: The new problem is that `simplify` does not work well for cases like `C+C*inv(L)`, which simplifies incorrectly to `P` 
 
 
 12. D
