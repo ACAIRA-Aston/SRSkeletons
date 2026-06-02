@@ -96,16 +96,24 @@ As such, it should not count towards $N_D$ or $N_U$. The same applies to POWER: 
    UPDATE: I added a block to "Prohibit self-nesting of INV and POWER"
 
 
-10. Cases like this `L*inv(L)` or `P*inv(L)` must not happen as they would be equivalent to `C+C*inv(L)` and `P+C*inv(L)`.
+10. Cases like this `L*inv(L)`, `P*inv(L)`, `L*inv(P)` must not happen as they would be equivalent to `C+C*inv(L)`, `P+C*inv(L)`, `C+P*inv(P)`, which are already being represented.
    
       ~~**TODO**~~: First, find out why `L*inv(L)` is not being simplified automatically.
       
-      UPDATE: Because `inv` was not inherently defined in SymPy's dictionary. I added function `inv` in `reducer.py` and added it to `LOCAL_DICT`.
+      UPDATE: Because `inv` was not inherently defined in SymPy's dictionary. I added function `inv` in `reducer.py` and added it to `LOCAL_DICT`. UPDATE 2: I removed it again from the dictionary, as it creates simplification issues. It is better to keep it as a unkown function for now.
 
-      **TODO**: The new problem is that `simplify` does not work well for cases like `C+C*inv(L)`, which simplifies incorrectly to `P` 
+      ~~**TODO**~~: The new problem is that `simplify` does not work for cases like `C+C*inv(L)`, which simplifies incorrectly to `P` 
 
+      UPDATE: I added a new block in function `apply_rule` that checks conflicting multipliers. 
 
-12. D
+      ~~**TODO**~~: Also, cases like `inv(L)*inv(L)`, `inv(L)*inv(P)`, `inv(P)*inv(P)` must be prohibited.
+      In general, multiplications of `inv`s are discouraged because `inv(A)*inv(B)` is equal to `inv(A*B)` which is already accounted for.
+
+      **TODO**: Only one `inv` per addition is permitted
+
+       
+
+12. **TODO**: The same reules apply to POWER
 
 
 # SAMPLING

@@ -24,7 +24,7 @@ class inv(sp.Function):
 # Define standard placeholders as global SymPy symbols
 C, L, P = sp.symbols('C L P')
 # A local dictionary ensuring SymPy cleanly maps tokens to our designated symbols
-LOCAL_DICT = {'C': C, 'L': L, 'P': P, 'inv': inv}
+LOCAL_DICT = {'C': C, 'L': L, 'P': P}  # , 'inv': inv
 
 # ---------------------------------------------------------------------------
 # Helper functions

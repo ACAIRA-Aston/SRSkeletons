@@ -26,11 +26,12 @@ def find_leftmost_nt(node, non_terminals: set):
     return None
 
 
-def apply_rule(expr_tree, production, non_terminals: set, n_u: int):
+def apply_rule(expr_tree, production, grammar, n_u: int):
     """
     Applies a production rule by adding children to the non-terminal node.
     Returns a deep copy of the tree to represent the new derivation path.
     """
+    non_terminals = grammar.non_terminals
     new_tree = copy.deepcopy(expr_tree)
     target_node = find_leftmost_nt(new_tree, non_terminals)  # Find the corresponding node in the new tree
 
@@ -44,18 +45,25 @@ def apply_rule(expr_tree, production, non_terminals: set, n_u: int):
     if 'inv' in production or '/' in production:
         highest_psi = None
         currI = target_node.parent.parent
-        # currI.children[0].symbol = '1'
-        # currI.children.remove(next((child for child in currI.children if child.symbol == '*'), None))
         while currI:
             if currI.symbol == 'Ψ':
                 highest_psi = currI
                 break
             currI = currI.parent
         if highest_psi:
-            pass
             if 'inv' in [ch.symbol for ch in highest_psi.children] or '/' in [ch.symbol for ch in highest_psi.children]:
                 return None
-    if 'pow' in production:
+        # Check if there's another inv in the multiplication
+        highest_psi = target_node.parent
+        if highest_psi.symbol in {'Φ', 'Ψ'}:
+            # If we just added a multiplicative Atom, check there's no other Atom in the multiplication
+            while highest_psi.parent and highest_psi.parent.symbol in {'Φ', 'Ω'}:
+                I_node = next((child for child in highest_psi.children if child.symbol == 'inv'), None)
+                if I_node:  # Cases like this `inv(A)*...*inv(B)`
+                    return None
+                highest_psi = highest_psi.parent
+
+    if 'powu' in production:
         highest_psi = None
         currI = target_node.parent.parent
         while currI:
@@ -64,15 +72,16 @@ def apply_rule(expr_tree, production, non_terminals: set, n_u: int):
                 break
             currI = currI.parent
         if highest_psi:
-            pass
-            if 'pow' in [ch.symbol for ch in highest_psi.children]:
+            if 'powu' in [ch.symbol for ch in highest_psi.children]:
                 return None
+        # TODO  # Check if there's another pow in the multiplication
 
 
     curr = target_node
-    highest_phi, highest_tau = None, None
+    highest_phi, highest_tau, highest_psi = None, None, None
 
     if target_node.children[0].symbol == 'Atom':
+        ## Check multiplicative redundancies
         # Climb up to find the immediate Φ block containing this target_node
         while curr:
             if curr.symbol in {'Φ', 'Ψ'}:
@@ -91,21 +100,24 @@ def apply_rule(expr_tree, production, non_terminals: set, n_u: int):
                     # Check if there's already another Atom in the multipliers
                     L_node = next((child for child in highest_phi.children if child.symbol == 'L'), None)
                     P_node = next((child for child in highest_phi.children if child.symbol == 'P'), None)
-                    if L_node or P_node:
+                    I_node = next((child for child in highest_phi.children if grammar.flatten_to_string(child) in {'inv(P)', 'inv(L)'}), None)
+                    if L_node or P_node or I_node:
                         return None
                     highest_phi = highest_phi.parent
                     ctr += 1
                 C_node = next((child for child in highest_phi.children if child.symbol == 'C'), None)
                 L_node = next((child for child in highest_phi.children if child.symbol == 'L'), None)
                 P_node = next((child for child in highest_phi.children if child.symbol == 'P'), None)
+                I_node = next((child for child in highest_phi.children if grammar.flatten_to_string(child) in {'inv(P)', 'inv(L)'}), None)
                 if C_node:  # Remove 'C*' in cases 'C*Atom'
                     highest_phi.children.remove(C_node)
                     highest_phi.children.remove(next((child for child in highest_phi.children if child.symbol == '*'), None))
-                if L_node or P_node:
+                if L_node or P_node or I_node:
                     return None
                 # if ctr >= n_u + 1:
                 #     return None
 
+        ## Check additive redundancies
         # Climb up to find the immediate τ block containing this target_node
         curr = target_node
         while curr:
@@ -113,7 +125,7 @@ def apply_rule(expr_tree, production, non_terminals: set, n_u: int):
                 highest_tau = curr
                 break
             curr = curr.parent
-        # Ride the τ chain to the top of this specific multiplication scope
+        # Ride the τ chain to the top
         if highest_tau:
             # The second condition implies that the Atom that has been added, while it belongs to a parent Ω, is not
             # multiplied by anything (from 'C*Atom' it was transformed into just 'Atom')
@@ -134,6 +146,30 @@ def apply_rule(expr_tree, production, non_terminals: set, n_u: int):
                 P_node = next((child for child in highest_tau.children if child.symbol == 'P'), None)
                 if L_node or P_node:
                     return None
+
+    if target_node.children[0].symbol == 'L' or target_node.children[0].symbol == 'P':
+        ## Check inverse redundancies
+        # Climb up to find the immediate unary operator
+        curr = target_node
+        if curr.parent.symbol == 'Ψ' and curr.parent.parent.symbol == 'Φ'  and curr.parent.parent.parent.symbol == 'Ω'\
+                and curr.parent.parent.parent.parent.symbol == 'τ' and curr.parent.parent.parent.parent.parent.symbol == 'Ψ':
+            highest_psi = curr.parent.parent.parent.parent.parent
+            if any([ch.symbol == 'inv' for ch in highest_psi.children]):  # Verifies that we're inside an INV
+                if highest_psi.symbol in {'Φ', 'Ψ'}:
+                    # If we just added a multiplicative Atom, check there's no other Atom in the multiplication
+                    while highest_psi.parent and highest_psi.parent.symbol in {'Φ', 'Ω'}:
+                    # Check if there's already another Atom in the multipliers
+                        L_node = next((child for child in highest_psi.children if child.symbol == 'L'), None)
+                        P_node = next((child for child in highest_psi.children if child.symbol == 'P'), None)
+                        if target_node.children[0].symbol == 'L' and L_node: # Cases like this `L*...*inv(L)`
+                            return None
+                        if target_node.children[0].symbol == 'L' and P_node:  # Cases like this `P*...*inv(L)`
+                            return None
+                        if target_node.children[0].symbol == 'P' and L_node:  # Cases like this `L*...*inv(P)`
+                            return None
+                        if target_node.children[0].symbol == 'P' and L_node:  # Cases like this `L*...*inv(P)`
+                            return None
+                        highest_psi = highest_psi.parent
 
 
 

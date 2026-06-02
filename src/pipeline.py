@@ -31,11 +31,11 @@ def generate_exhaustive_skeletons(grammar, n_u: int, n_d: int, unary_ops: Set[st
         nt = find_leftmost_nt(expr, grammar.non_terminals)
         # Expand based on production rules in G
         for production in grammar.get_productions(nt):
-            if 'C+C*inv(Atom)' in grammar.flatten_to_string(expr):  # 'C+C*sin(C+C*sin(L)+C*Ψ)'
+            if 'Atom*inv(P)' in grammar.flatten_to_string(expr):  # 'C+C*sin(C+C*sin(L)+C*Ψ)'
                 pass
             if nt.symbol == 'τ' and (nt.parent.symbol == 'τ' or nt.parent.symbol == 'σ'):  # If it's a second-generation τ, don't add a constant C
                 production = ['Ω']
-            path = apply_rule(expr, production, grammar.non_terminals, n_u=n_u)
+            path = apply_rule(expr, production, grammar, n_u=n_u)
             if path is None:
                 continue
 
@@ -65,7 +65,7 @@ def generate_exhaustive_skeletons(grammar, n_u: int, n_d: int, unary_ops: Set[st
             if 'powu(L)' in path_str or 'powu(P)' in path_str:
                 continue
 
-            if 'C+L*sin(L)+τ' == path_str:
+            if 'L*inv(P)' in path_str:
                 pass
             c_nu = count_nu(path, unary_ops)
             if c_nu <= n_u and max_nd(path, unary_ops) <= n_d and path_str not in seen_paths:
@@ -73,6 +73,6 @@ def generate_exhaustive_skeletons(grammar, n_u: int, n_d: int, unary_ops: Set[st
                     Q.append(path)
                     grammar.flatten_to_string(path)
                     seen_paths.add(path_str)
-                    print('\t', path_str)
+                    # print('\t', path_str)
 
     return S
