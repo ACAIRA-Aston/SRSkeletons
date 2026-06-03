@@ -31,9 +31,11 @@ def generate_exhaustive_skeletons(grammar, n_u: int, n_d: int, unary_ops: Set[st
         nt = find_leftmost_nt(expr, grammar.non_terminals)
         # Expand based on production rules in G
         for production in grammar.get_productions(nt):
-            if 'Atom*inv(P)' in grammar.flatten_to_string(expr):  # 'C+C*sin(C+C*sin(L)+C*Ψ)'
+            if 'L+P*Ψ' in grammar.flatten_to_string(expr) and 'inv' in production:  # 'C+C*sin(C+C*sin(L)+C*Ψ)'
                 pass
             if nt.symbol == 'τ' and (nt.parent.symbol == 'τ' or nt.parent.symbol == 'σ'):  # If it's a second-generation τ, don't add a constant C
+                production = ['Ω']
+            if nt.symbol == 'τ' and (nt.parent.children[0].symbol == 'exp'):  # If it's a second-generation τ, don't add a constant C
                 production = ['Ω']
             path = apply_rule(expr, production, grammar, n_u=n_u)
             if path is None:
@@ -62,13 +64,16 @@ def generate_exhaustive_skeletons(grammar, n_u: int, n_d: int, unary_ops: Set[st
             path_str = grammar.flatten_to_string(path)
 
             # The POWER operator should not be applied directly to L or P: POWER(L)=P and POWER(P)=P
-            if 'powu(L)' in path_str or 'powu(P)' in path_str:
+            if any([ss in path_str for ss in ['powu(L)', 'powu(P)', 'powu(C+C*inv(L))', 'powu(C+C*inv(P))',
+                                              'powu(C + P*inv(P))', 'powu(C + P*inv(P))']]):
                 continue
+
 
             if 'L*inv(P)' in path_str:
                 pass
             c_nu = count_nu(path, unary_ops)
-            if c_nu <= n_u and max_nd(path, unary_ops) <= n_d and path_str not in seen_paths:
+
+            if (c_nu <= n_u and path_str.count('P') <= n_u) and max_nd(path, unary_ops) <= n_d and path_str not in seen_paths:  # For practicity, consider P as if it was a unary operator too
                 if check_constraints_mult(path, n_u, c_nu) and check_constraints_add(path, n_u, c_nu):
                     Q.append(path)
                     grammar.flatten_to_string(path)

@@ -51,7 +51,7 @@ def apply_rule(expr_tree, production, grammar, n_u: int):
                 break
             currI = currI.parent
         if highest_psi:
-            if 'inv' in [ch.symbol for ch in highest_psi.children] or '/' in [ch.symbol for ch in highest_psi.children]:
+            if 'inv' in [ch.symbol for ch in highest_psi.children]:
                 return None
         # Check if there's another inv in the multiplication
         highest_psi = target_node.parent
@@ -62,8 +62,28 @@ def apply_rule(expr_tree, production, grammar, n_u: int):
                 if I_node:  # Cases like this `inv(A)*...*inv(B)`
                     return None
                 highest_psi = highest_psi.parent
+            highest_psi = highest_psi.parent
+            # At this point, we reached the Ω → C * Φ rule, now we need to check the parent's siblings to check the other additive terms
+            P_flag = False
+            if grammar.flatten_to_string(highest_psi) == 'P*inv(τ)':
+                P_flag = True
+            while highest_psi and highest_psi.symbol in {'τ', 'σ'}:
+                # Check if there's already another RESOLVED inv() in the additive terms
+                for child in highest_psi.children:
+                    if child.symbol not in {'*', '+'}:
+                        ch_expr = sp.sympify(grammar.flatten_to_string(child))
+                        if str(ch_expr) in {'L', 'P'} and P_flag:
+                            return None
+                        if not any([s in str(ch_expr) for s in {'τ', 'σ', 'Φ', 'Ω', 'Ψ'}]):
+                            if isinstance(ch_expr, sp.Mul):
+                                for aa in ch_expr.args:
+                                    if 'inv' in str(aa.func):
+                                        return None
+                            elif 'inv' in str(ch_expr.func):
+                                return None
+                highest_psi = highest_psi.parent
 
-    if 'powu' in production:
+    if 'powu' in production or 'exp' in production:
         highest_psi = None
         currI = target_node.parent.parent
         while currI:
@@ -72,9 +92,41 @@ def apply_rule(expr_tree, production, grammar, n_u: int):
                 break
             currI = currI.parent
         if highest_psi:
-            if 'powu' in [ch.symbol for ch in highest_psi.children]:
+            if 'powu' in [ch.symbol for ch in highest_psi.children] or 'exp' in [ch.symbol for ch in highest_psi.children] \
+                    or 'inv' in [ch.symbol for ch in highest_psi.children]:
                 return None
-        # TODO  # Check if there's another pow in the multiplication
+        # Check if there's another pow in the multiplication
+        highest_psi = target_node.parent
+        if highest_psi.symbol in {'Φ', 'Ψ'}:
+            # If we just added a multiplicative Atom, check there's no other Atom in the multiplication
+            while highest_psi.parent and highest_psi.parent.symbol in {'Φ', 'Ω'}:
+                I_node = next((child for child in highest_psi.children if child.symbol in 'powu'), None)
+                L_node = next((child for child in highest_psi.children if child.symbol == 'L'), None)
+                P_node = next((child for child in highest_psi.children if child.symbol == 'P'), None)
+                if I_node or L_node or P_node:  # Cases like this `powu(A)*...*powu(B)` or Atom*powu(...)
+                    return None
+                highest_psi = highest_psi.parent
+
+    if 'exp' in production:
+        highest_psi = None
+        currI = target_node.parent.parent
+        while currI:
+            if currI.symbol == 'Ψ':
+                highest_psi = currI
+                break
+            currI = currI.parent
+        if highest_psi:
+            if 'exp' in [ch.symbol for ch in highest_psi.children] or 'inv' in [ch.symbol for ch in highest_psi.children]:
+                return None
+        # Check if there's another pow in the multiplication
+        highest_psi = target_node.parent
+        if highest_psi.symbol in {'Φ', 'Ψ'}:
+            # If we just added a multiplicative Atom, check there's no other Atom in the multiplication
+            while highest_psi.parent and highest_psi.parent.symbol in {'Φ', 'Ω'}:
+                I_node = next((child for child in highest_psi.children if child.symbol in 'exp'), None)
+                if I_node:  # Cases like this `powu(A)*...*powu(B)`
+                    return None
+                highest_psi = highest_psi.parent
 
 
     curr = target_node
@@ -101,7 +153,8 @@ def apply_rule(expr_tree, production, grammar, n_u: int):
                     L_node = next((child for child in highest_phi.children if child.symbol == 'L'), None)
                     P_node = next((child for child in highest_phi.children if child.symbol == 'P'), None)
                     I_node = next((child for child in highest_phi.children if grammar.flatten_to_string(child) in {'inv(P)', 'inv(L)'}), None)
-                    if L_node or P_node or I_node:
+                    W_node = next((child for child in highest_phi.children if child.symbol in 'powu'), None)
+                    if L_node or P_node or I_node or W_node:
                         return None
                     highest_phi = highest_phi.parent
                     ctr += 1
@@ -109,10 +162,11 @@ def apply_rule(expr_tree, production, grammar, n_u: int):
                 L_node = next((child for child in highest_phi.children if child.symbol == 'L'), None)
                 P_node = next((child for child in highest_phi.children if child.symbol == 'P'), None)
                 I_node = next((child for child in highest_phi.children if grammar.flatten_to_string(child) in {'inv(P)', 'inv(L)'}), None)
+                W_node = next((child for child in highest_phi.children if child.symbol in 'powu'), None)
                 if C_node:  # Remove 'C*' in cases 'C*Atom'
                     highest_phi.children.remove(C_node)
                     highest_phi.children.remove(next((child for child in highest_phi.children if child.symbol == '*'), None))
-                if L_node or P_node or I_node:
+                if L_node or P_node or I_node or W_node:
                     return None
                 # if ctr >= n_u + 1:
                 #     return None
@@ -132,10 +186,11 @@ def apply_rule(expr_tree, production, grammar, n_u: int):
             if highest_tau.symbol == 'τ' or (highest_tau.symbol == 'Ω' and len(highest_tau.children[0].children) == 1):
                 # If we just included an additive Atom, check there's no other Atom in the sum
                 while highest_tau.parent and highest_tau.parent.symbol in {'τ', 'σ'}:
-                    # Check if there's already another Atom in the multipliers
+                    # Check if there's already another Atom in the additive terms
                     L_node = next((child for child in highest_tau.children if child.symbol == 'L'), None)
                     P_node = next((child for child in highest_tau.children if child.symbol == 'P'), None)
-                    if L_node or P_node:
+                    PP_node = next((child for child in highest_tau.children if grammar.flatten_to_string(child) in {'P*inv(P)'}), None)
+                    if L_node or P_node or PP_node:
                         return None
                     highest_tau = highest_tau.parent
                 C_node = next((child for child in highest_tau.children if child.symbol == 'C'), None)
@@ -144,7 +199,8 @@ def apply_rule(expr_tree, production, grammar, n_u: int):
                     highest_tau.children.remove(next((child for child in highest_tau.children if child.symbol == '+'), None))
                 L_node = next((child for child in highest_tau.children if child.symbol == 'L'), None)
                 P_node = next((child for child in highest_tau.children if child.symbol == 'P'), None)
-                if L_node or P_node:
+                PP_node = next((child for child in highest_tau.children if grammar.flatten_to_string(child) in {'P*inv(P)'}), None)
+                if L_node or P_node or PP_node:
                     return None
 
     if target_node.children[0].symbol == 'L' or target_node.children[0].symbol == 'P':

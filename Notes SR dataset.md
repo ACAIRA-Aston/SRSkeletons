@@ -109,11 +109,42 @@ As such, it should not count towards $N_D$ or $N_U$. The same applies to POWER: 
       ~~**TODO**~~: Also, cases like `inv(L)*inv(L)`, `inv(L)*inv(P)`, `inv(P)*inv(P)` must be prohibited.
       In general, multiplications of `inv`s are discouraged because `inv(A)*inv(B)` is equal to `inv(A*B)` which is already accounted for.
 
-      **TODO**: Only one `inv` per addition is permitted
+      ~~**TODO**~~: Only one `inv` per addition is permitted.
+
+      UPDATE: Done, at the end of the "Prohibit self-nesting" block inside `applyrule`
 
        
 
-12. **TODO**: The same reules apply to POWER
+12. ~~**TODO**~~: Similar, there must be only one POWER operation within a multiplication
+
+
+13. ~~**TODO**~~: It would be convenient to allow for only two `P`s in the expression
+
+
+13. Cases like `P*powu(L*exp(P) + P) + P` must be prohibited because it{s equivalent to `powu(P*exp(P) + P) + P`, which already exists. 
+
+      **~~TODO~~**: The solution is to avoid multiplying an `Atom` to a `powu`
+
+
+14. Cases like `C+C*exp(C+C*inv(L))` were being eliminated because they automatically simplify to `C*exp(C*inv(L)) + C`
+
+      ~~**TODO**~~: Don't allow additive placeholders C inside exp.
+      
+      UPDATE: Added the clause `if nt.symbol == 'τ' and (nt.parent.children[0].symbol == 'exp'): production = ['Ω']` in `pipeline.py`
+
+
+15. I checked that the most complicated skeleton in `exp(-((theta-theta1)/sigma)**2/2)/(sqrt(2*pi)*sigma)` (i.e., exp(C * inv(S^2)) * inv(S))
+can be generated: `C*inv(L)*exp(C*inv(P)) + C`
+
+
+16. ~~**TODO**~~: Note that `exp` cannot be inside an `inv` as this can already be done if the exponent is negative
+
+
+17. ~~**TODO**~~: `P*inv(P)` shouldn't be added to an atom as it is redundant.
+
+
+18. To discuss: What if I include the `square` and `cube` operators in addition to `powu`, as they're very characteristic functions.
+That way, when sampling, `powu` could only take exponent values greater than 3. 
 
 
 # SAMPLING

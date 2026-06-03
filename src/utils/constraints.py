@@ -4,7 +4,7 @@ from typing import Set
 def count_nu(node, unary_ops: Set[str]) -> int:
     """ Calculates the total number of unary operators (N_U) present in the derivation tree """
     count = 0
-    if node.symbol in unary_ops and not node.children:
+    if node.symbol in unary_ops and not node.children and not node.symbol in {'inv', 'powu'}:
         count = 1
     return count + sum(count_nu(child, unary_ops) for child in node.children)  # Sum up counts from all branches
 
