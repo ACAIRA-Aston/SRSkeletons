@@ -68,3 +68,16 @@ def check_constraints_add(path, n_u: int, c_nu: int):
     if n_u == c_nu and len(leaf_tau_nodes) >= 1:
         return False
     return True
+
+
+def check_power_constraints(path_str):
+    constraints = ['powu(L)', 'powu(P)', 'powu(C+C*inv(L))', 'powu(C+C*inv(P))', 'powu(C + P*inv(P))',
+                   'powu(C + P*inv(P))',
+                   'square(L)', 'square(P)', 'square(C+C*inv(L))', 'square(C+C*inv(P))', 'square(C + P*inv(P))',
+                   'square(C + P*inv(P))',
+                   'cube(L)', 'cube(P)', 'cube(C+C*inv(L))', 'cube(C+C*inv(P))', 'cube(C + P*inv(P))',
+                   'cube(C + P*inv(P))',
+                   'sqrt(L)', 'sqrt(P)', 'sqrt(C+C*inv(L))', 'sqrt(C+C*inv(P))', 'sqrt(C + P*inv(P))',
+                   'sqrt(C + P*inv(P))',
+                   ]
+    return any([ss in path_str for ss in constraints])

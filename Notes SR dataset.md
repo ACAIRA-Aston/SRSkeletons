@@ -143,9 +143,20 @@ can be generated: `C*inv(L)*exp(C*inv(P)) + C`
 17. ~~**TODO**~~: `P*inv(P)` shouldn't be added to an atom as it is redundant.
 
 
-18. To discuss: What if I include the `square` and `cube` operators in addition to `powu`, as they're very characteristic functions.
+18. To discuss: What if I include the `square`, `cube`, and `sqrt` operators in addition to `powu`, as they're very characteristic functions.
 That way, when sampling, `powu` could only take exponent values greater than 3. 
 
+
+19. At the end of Section 4, there should be a reference to an appendix, which lists all additional rules to help simplification
+
+    - `P` involves exponentiating a variable, so it counts towards $N_U$
+    - The power functions cannot be applied directly to `L` or `P` 
+    - `L*inv(L)` -> `C + C inv(L)`. `P*inv(L)` -> `P + C inv(L)`
+    - `P*inv(P)` shouldn't be added to an Atom
+    - `inv` cannot be nested within another `inv`, or summed or multiplied by another `inv`
+    - `POW` cannot be nested within another `POW` or power operation.
+    - `exp` cannot be multiplied by another `exp` or be inside an `inv`
+    - `exp` is not allowed to have an additive constant
 
 # SAMPLING
 

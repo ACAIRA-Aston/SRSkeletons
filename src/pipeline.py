@@ -1,7 +1,7 @@
 import collections
 from typing import Set
 from src.symbolic.normalizer import canonical_sort
-from src.utils.constraints import count_nu, max_nd, check_constraints_mult, check_constraints_add
+from src.utils.constraints import count_nu, max_nd, check_constraints_mult, check_constraints_add, check_power_constraints
 from src.symbolic.reducer import simplify, is_less_complex, prune_linear_constants
 from src.grammar.engine import find_leftmost_nt, apply_rule, get_subtree, update_subtree, Node
 
@@ -63,17 +63,14 @@ def generate_exhaustive_skeletons(grammar, n_u: int, n_d: int, unary_ops: Set[st
             # Ensure path satisfies complexity bounds and hasn't been seen before
             path_str = grammar.flatten_to_string(path)
 
-            # The POWER operator should not be applied directly to L or P: POWER(L)=P and POWER(P)=P
-            if any([ss in path_str for ss in ['powu(L)', 'powu(P)', 'powu(C+C*inv(L))', 'powu(C+C*inv(P))',
-                                              'powu(C + P*inv(P))', 'powu(C + P*inv(P))']]):
+            if check_power_constraints(path_str):
                 continue
-
 
             if 'L*inv(P)' in path_str:
                 pass
-            c_nu = count_nu(path, unary_ops)
+            c_nu = count_nu(path, unary_ops) + path_str.count('P')
 
-            if (c_nu <= n_u and path_str.count('P') <= n_u) and max_nd(path, unary_ops) <= n_d and path_str not in seen_paths:  # For practicity, consider P as if it was a unary operator too
+            if (c_nu <= n_u) and max_nd(path, unary_ops) <= n_d and path_str not in seen_paths:  # For practicity, consider P as if it was a unary operator too
                 if check_constraints_mult(path, n_u, c_nu) and check_constraints_add(path, n_u, c_nu):
                     Q.append(path)
                     grammar.flatten_to_string(path)
