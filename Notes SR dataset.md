@@ -155,6 +155,7 @@ That way, when sampling, `powu` could only take exponent values greater than 3.
     - `P*inv(P)` shouldn't be added to an Atom
     - `inv` cannot be nested within another `inv`, or summed or multiplied by another `inv`
     - `POW` cannot be nested within another `POW` or power operation.
+    - `POW(P)` is prohibited 
     - `exp` cannot be multiplied by another `exp` or be inside an `inv`
     - `exp` is not allowed to have an additive constant
 

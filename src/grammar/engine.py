@@ -131,7 +131,7 @@ def apply_rule(expr_tree, production, grammar, n_u: int):
                     return None
                 highest_psi = highest_psi.parent
 
-    if 'exp' in production:
+    if any([ss in production for ss in ['exp', 'sinh', 'cosh']]):
         highest_psi = None
         currI = target_node.parent.parent
         while currI:
@@ -140,8 +140,12 @@ def apply_rule(expr_tree, production, grammar, n_u: int):
                 break
             currI = currI.parent
         if highest_psi:
-            if any([s in [ch.symbol for ch in highest_psi.children] for s in ['abs', 'powu', 'square', 'cube', 'exp', 'inv']]):
-                return None
+            if 'exp' in production:
+                if any([s in [ch.symbol for ch in highest_psi.children] for s in ['abs', 'powu', 'square', 'cube', 'exp', 'inv', 'sinh', 'cosh']]):
+                    return None
+            else:
+                if any([s in [ch.symbol for ch in highest_psi.children] for s in ['abs', 'powu', 'square', 'cube', 'exp', 'sinh', 'cosh']]):
+                    return None
         # Check if there's another exp in the multiplication
         highest_psi = target_node.parent
         if highest_psi.symbol in {'Φ', 'Ψ'}:

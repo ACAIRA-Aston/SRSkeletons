@@ -1,3 +1,8 @@
+import sys
+import os
+
+sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
+
 import pandas as pd
 import time
 from src.grammar.cfg import StructuralGrammar
@@ -24,7 +29,8 @@ def main():
 
     print(f"Saving to {config.OUTPUT_PATH}...")
     df = pd.DataFrame(list(unique_skeletons), columns=['skeleton'])
-    df['skeleton_length'] = df['skeleton'].str.len()  # Add metadata columns if needed for filtering later
+    df['skeleton_length'] = df['skeleton'].str.len()
+    df.sort_values(by=["skeleton_length"])
     df.to_parquet(config.OUTPUT_PATH, engine='pyarrow', compression='snappy')
 
     print("Success!")

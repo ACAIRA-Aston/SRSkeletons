@@ -11,8 +11,8 @@ N_D = 2        # Maximum nesting depth of unary operators
 # Unary Operators
 # Includes standard, trigonometric, hyperbolic, and specialized functions
 UNARY_OPERATORS = [
-    'square', 'sin' #'sin', 'tan', 'exp', 'logg', 'sqrt', 'abs', 'sinh', 'cosh', 'tanh', 'asin', 'atan', 'asinh', 'acosh', 'atanh',
-     # 'square', 'cube', 'powu', 'inv'
+    'sin', 'tan', 'exp', 'logg', 'sqrt2', 'abs', 'sinh', 'cosh', 'tanh', 'asin', 'atan', 'asinh', 'acosh', 'atanh',
+     'square', 'cube', 'powu', 'inv'
 ]
 
 # --- Storage Settings ---
