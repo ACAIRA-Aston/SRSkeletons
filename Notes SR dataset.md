@@ -159,6 +159,10 @@ That way, when sampling, `powu` could only take exponent values greater than 3.
     - `exp` cannot be multiplied by another `exp` or be inside an `inv`
     - `exp` is not allowed to have an additive constant
 
+
+20. Fix: /var/spool/slurm/d/job4046476/slurm_script: line 32: 1506109 Killed                  python main.py
+[2026-06-08T12:15:04.734] error: Detected 1 oom_kill event in StepId=4046476.batch. Some of the step tasks have been OOM Killed.
+
 # SAMPLING
 
 
