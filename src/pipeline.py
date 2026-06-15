@@ -62,9 +62,9 @@ def generate_exhaustive_skeletons(grammar, n_u: int, n_d: int, unary_ops: Set[st
 
             if 'L*inv(P)' in path_str:
                 pass
-            c_nu = count_nu(path, unary_ops) + path_str.count('P')
+            c_nu = count_nu(path, unary_ops)
 
-            if (c_nu <= n_u) and max_nd(path, unary_ops) <= n_d and path_str not in seen_paths:  # For practicity, consider P as if it was a unary operator too
+            if (c_nu <= n_u and path_str.count('P') <= 1) and max_nd(path, unary_ops) <= n_d and path_str not in seen_paths:  # For practicity, consider P as if it was a unary operator too
                 if check_constraints_mult(path, n_u, c_nu) and check_constraints_add(path, n_u, c_nu):
                     Q.append(path)
                     grammar.flatten_to_string(path)
