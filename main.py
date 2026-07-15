@@ -1,13 +1,16 @@
-import sys
 import os
+import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
-import pandas as pd
+import re
 import time
+import config
+import pandas as pd
 from src.grammar.cfg import StructuralGrammar
 from src.pipeline import generate_exhaustive_skeletons
-import config
+from src.symbolic.reducer import inv, cube_func, square_func
+from sympy import sympify, symbols, parse_expr, Function, Pow, exp
 
 
 def main():
@@ -27,8 +30,39 @@ def main():
     print(f"Total Unique Skeletons: {len(unique_skeletons):,}")
     print(f"Time Elapsed: {duration:.2f} seconds")
 
-    print(f"Saving to {config.OUTPUT_PATH}...")
     df = pd.DataFrame(list(unique_skeletons), columns=['skeleton'])
+    df['skeleton_length'] = df['skeleton'].str.len()
+    df.sort_values(by=["skeleton_length"])
+    df.to_parquet(config.OUTPUT_PATH, engine='pyarrow', compression='snappy')
+
+    # Clean dataset
+    print("Cleaning dataset")
+    LOCAL_DICT = {'inv': inv, 'powu': Function('powu'), 'cube': cube_func, 'square': square_func}
+    unique_skeletons = []
+
+    skeletons = pd.read_parquet('../data/canonical_skeletons.parquet')
+
+    for sk in range(skeletons.shape[0]):
+        skeleton = skeletons.iloc[sk].skeleton
+        skeleton = skeleton.replace('logg', 'log')
+        skeleton = skeleton.replace('sqrt2', 'sqrt')
+        expr = parse_expr(skeleton, local_dict=LOCAL_DICT, evaluate=False)
+        flag = False
+        powu_terms = expr.atoms(Function('powu'))
+        for term in powu_terms:
+            arg = term.args[0]
+            arg_str = str(arg)
+            if re.search(r'\bP\b', arg_str) and (not re.search(r'\(P\)', arg_str)) and (not re.search(r'\/P', arg_str)):
+                flag = True
+                break
+
+        if not flag:
+            unique_skeletons.append(skeleton)
+        else:
+            pass
+
+    print(f"Saving to {config.OUTPUT_PATH}...")
+    df = pd.DataFrame(unique_skeletons, columns=['skeleton'])
     df['skeleton_length'] = df['skeleton'].str.len()
     df.sort_values(by=["skeleton_length"])
     df.to_parquet(config.OUTPUT_PATH, engine='pyarrow', compression='snappy')

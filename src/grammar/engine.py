@@ -98,7 +98,6 @@ def apply_rule(expr_tree, production, grammar, n_u: int):
         # Check if there's another pow in the multiplication
         highest_psi = target_node.parent
         if highest_psi.symbol in {'Φ', 'Ψ'}:
-            # If we just added a multiplicative Atom, check there's no other Atom in the multiplication
             while highest_psi.parent and highest_psi.parent.symbol in {'Φ', 'Ω'}:
                 I_node = next((child for child in highest_psi.children if child.symbol in {'powu', 'square', 'cube', 'sqrt2'}), None)
                 L_node = next((child for child in highest_psi.children if child.symbol == 'L'), None)

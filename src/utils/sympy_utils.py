@@ -1,6 +1,9 @@
-from __future__ import annotations
+import re
+# from __future__ import annotations
 import sympy as sp
+import numpy as np
 from sympy import Add, Mul, Pow
+from numpy import iscomplex, isnan, isinf, abs
 
 
 def _avoid_operations_between_constants(xp):
@@ -263,9 +266,219 @@ def absorb_constants(expr: sp.Expr, max_iter: int = 30) -> sp.Expr:
     return expr
 
 
-# ---------------------------------------------------------------------------
-# Demo / self-test
-# ---------------------------------------------------------------------------
+def add_constant_identifier(sk, cm_counter=1, ca_counter=1):
+    """Label each coefficient of a skeleton expression"""
+    args = sk.args
+    new_args = []
+
+    for arg in args:
+        if arg.is_number:  # If it's a number, add it to the list
+            new_args.append(arg)
+        elif isinstance(arg, sp.Symbol) and 'C' in str(arg):
+            if isinstance(sk, sp.Add):
+                new_args.append(sp.sympify('ca_' + str(ca_counter)))
+                ca_counter += 1
+            else:
+                new_args.append(sp.sympify('cm_' + str(cm_counter)))
+                cm_counter += 1
+        elif isinstance(arg, sp.Symbol):
+            new_args.append(arg)
+        else:  # If it's composed, explore a lower level of the tree
+            deep_xp, cm_counter, ca_counter = add_constant_identifier(arg, cm_counter=cm_counter, ca_counter=ca_counter)
+            new_args.append(deep_xp)
+
+    new_xp = sk.func(*new_args)
+    return new_xp, cm_counter, ca_counter
+
+
+def get_op(xp, Targ):
+    """Extract the operatorS in which the n-th argument is inside of
+    :param xp: Symbolic expression
+    :param Targ: The target argument"""
+    args = xp.args
+
+    if isinstance(xp, sp.Pow):  # If it's a power function, ignore the power and focus only on the base
+        args = args[0]
+        if args.is_number or isinstance(args, sp.Symbol) or (isinstance(args, sp.Symbol) and 'c' in str(args)):
+            args = [args]
+        else:
+            args = args.args
+
+    ops = []
+    for arg in args:
+        if arg.is_number or (isinstance(arg, sp.Symbol) and 'c' in str(arg)):  # If it's a number, add it to the list
+            if str(arg) == Targ:
+                return str(xp.func)
+        else:  # If it's composed, explore a lower level of the tree
+            op = get_op(arg, Targ)
+            if len(op) == 3:
+                ops = op
+            else:
+                if isinstance(op, list):
+                    ops = [str(xp.func)] + op
+                else:
+                    ops = [str(xp.func)] + [op]
+    return ops
+
+
+def get_op_constant(xp, c):
+    """Extract the operator in which the specified constant name is inside (ignoring mult or add)
+    :param xp: Symbolic expression
+    :param c: Constant name"""
+    args = xp.args
+
+    for arg in args:
+        if c in str(arg):
+            if arg.is_Symbol and str(arg) == c:
+                return True  # str(xp.func)
+            else:  # If it's composed, explore a lower level of the tree
+                op = get_op_constant(arg, c)
+                if op is True:
+                    if len(arg.args) == 1:  # It will return the first unary operation the constant is in
+                        return str(arg.func)
+                    elif isinstance(arg, sp.Pow):  # In case it's Pow, return the exponent too
+                        return str(arg.func), arg.args[1]
+                    else:
+                        return op
+                else:
+                    return op
+        else:
+            continue
+
+
+def bounded_operations():
+    """Returns the bounded and double-bounded unary operations.
+    Single-bounded operations are assigned their minimum or maximum admissible value.
+    Double-bounded operations are assigned their minimum and maximum admissible values."""
+
+    bounded = {'sqrt': ('min', 0.01),
+               'log': ('min', 0.001),
+               'acosh': ('min', 1.001),
+               'exp': ('max', 10),
+               'sinh': ('max', 8),
+               'cosh': ('max', 8),
+               'tanh': ('max', 8)}
+    double_bounded = {'asin': [-0.999, 0.999],
+                      'acos': [-0.999, 0.999],
+                      'atanh': [-0.999, 0.999],}
+    trig_functions = ['sin', 'cos', 'tan']
+    op_with_singularities = {'tan': 50, 'div': 50}
+
+    return bounded, double_bounded, op_with_singularities, trig_functions
+
+
+def get_args(xp, return_symbols=False):
+    """Extract all numeric arguments and coefficients of an expression
+    :param xp: Symbolic expression
+    :param return_symbols: If True, it also returns the symbols in the expression"""
+    args = xp.args
+    num_args = []
+
+    if isinstance(xp, sp.Pow):  # If it's a power function, ignore the power and focus only on the base
+        args = args[0]
+        if args.is_number or isinstance(args, sp.Symbol):
+            args = [args]
+        else:
+            args = args.args
+
+    for arg in args:
+        if arg.is_number or (isinstance(arg, sp.Symbol) and 'c' in str(arg)):  # If it's a number or coeff, add it
+            num_args.append(arg)
+        elif isinstance(arg, sp.Symbol) and return_symbols:
+            num_args.append(arg)
+        else:  # If it's composed, explore a lower level of the tree
+            num_args = num_args + get_args(arg, return_symbols=return_symbols)
+    return num_args
+
+
+def set_args(xp, target_args, return_symbols=False):
+    """Set all numeric arguments of an expression"""
+    args = xp.args
+    new_args = []
+
+    if isinstance(xp, sp.Pow):  # If it's a power function, ignore the power and focus only on the base
+        if xp.args[0].is_number or (
+                isinstance(xp.args[0], sp.Symbol) and str(xp.args[0]) == 'c'):  # If it's a number, add it to the list
+            new_args.append(target_args.pop(0))
+        elif isinstance(xp.args[0], sp.Symbol):
+            new_args.append(xp.args[0])
+        else:  # If it's composed, explore a lower level of the tree
+            new_args.append(set_args(xp.args[0], target_args))
+        new_args.append(xp.args[1])
+    else:
+        for arg in args:
+            if arg.is_number or (
+                    isinstance(arg, sp.Symbol) and 'c' in str(arg)):  # If it's a number or coeff, add it to the list
+                new_args.append(target_args.pop(0))
+            elif isinstance(arg, sp.Symbol) and not return_symbols:
+                new_args.append(arg)
+            elif isinstance(arg, sp.Symbol) and return_symbols:
+                new_args.append(target_args.pop(0))
+            else:  # If it's composed, explore a lower level of the tree
+                new_args.append(set_args(arg, target_args, return_symbols=return_symbols))
+    new_xp = xp.func(*new_args)
+    return new_xp
+
+
+def is_nan(x, bound=None):
+    """Encompasses NaN, Inf values, and outliers"""
+    if bound is None:
+        return iscomplex(x) + isnan(x) + isinf(x) + (abs(x) > 100000)  # + array(outliers)
+    else:
+        return iscomplex(x) + isnan(x) + isinf(x) + (abs(x) > 100000) + (abs(x) > bound)  # + array(outliers)
+
+
+def is_p_inside_unary_op(exp):
+    """
+    Check if a given "P" in an expression string is inside a unary operator
+    """
+    ops = {'sin', 'tan', 'exp', 'logg', 'sqrt2', 'sinh', 'cosh', 'tanh', 'asin', 'atan', 'asinh', 'acosh', 'atanh', 'square', 'cube'}
+    p_match = re.search(r'\bP\b', exp)
+    if not p_match:
+        return False
+    idx = p_match.start()
+    prefix = exp[:idx]
+
+    # Walk the prefix tracking a stack of '(' positions
+    stack = []
+    for i, ch in enumerate(prefix):
+        if ch == '(':
+            stack.append(i)
+        elif ch == ')':
+            if stack:
+                stack.pop()
+
+    if not stack:
+        return False  # P isn't inside any parens at all
+
+    innermost_open = stack[-1]
+    # Grab the identifier immediately preceding that '('
+    name_match = re.search(r'([a-zA-Z_]\w*)\s*$', prefix[:innermost_open])
+    if not name_match:
+        return False
+
+    func_name = name_match.group(1)
+    return func_name in ops
+
+
+def safe_pow_constant(expr):
+    # Automatically forces real roots: sign(base) * abs(base)**exp
+    return expr.replace(sp.Pow, lambda b, e: sp.Integer(1) if b.is_Number else b**e)
+
+
+def safe_pow(expr):
+    # Automatically forces real roots: sign(base) * abs(base)**exp
+    return expr.replace(sp.Pow, lambda b, e: sp.sign(b) * sp.Abs(b)**e if not e.is_Integer else b**e)
+
+
+def safe_evaluation(expr, support, varX):
+    """Evaluates an expression on a given support vector safely"""
+    expr = safe_pow(expr)
+    function = sp.lambdify(sp.flatten([varX]), expr, 'numpy')
+    # Evaluate values from the support vector into the new expression
+    return np.array(function(support))
+
+
 
 if __name__ == '__main__':
     C, L, P, x = sp.symbols('C L P x')

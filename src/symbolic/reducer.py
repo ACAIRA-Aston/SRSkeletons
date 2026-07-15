@@ -21,6 +21,14 @@ class inv(sp.Function):
         return (1 / x).evalf(prec)
 
 
+def cube_func(x):
+    return x**3
+
+
+def square_func(x):
+    return x**2
+
+
 # Define standard placeholders as global SymPy symbols
 C, L, P = sp.symbols('C L P')
 # A local dictionary ensuring SymPy cleanly maps tokens to our designated symbols
