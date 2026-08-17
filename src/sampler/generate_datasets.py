@@ -98,11 +98,11 @@ class GenerateData:
 
     def generate_all_batches(self):
         full_data = []
-        for batch_id in trange(125+192+15, len(self.batch_list)):
+        for batch_id in trange(0, len(self.batch_list)):
             full_data.append(self.generate_batch(batch_id))
         return full_data
 
-    def curate_dataset(self, difficulty, output_path=None):
+    def curate_dataset(self, difficulty, output_path=None, row_idx=None):
         """
         Interactively loops through the skeletons of the specified difficulty.
         Generates 10 curves for each, plots them in a grid, and prompts you
@@ -132,13 +132,22 @@ class GenerateData:
         orig_num_sets = getattr(config, 'number_of_sets', 10)
         config.number_of_sets = 10
 
+        # Determine which rows to iterate over
+        if row_idx is not None:
+            if not (0 <= row_idx < len(self.skeletons)):
+                raise IndexError(f"Index {row_idx} is out of bounds for skeletons of length {len(self.skeletons)}.")
+            target_skeletons = [(row_idx, self.skeletons.iloc[row_idx])]
+            print(f"-> Mode: Single-index curation for row index {row_idx}")
+        else:
+            target_skeletons = list(self.skeletons.iterrows())
+
         # Track which skeletons we've already curated
         completed_skeletons = {r['skeleton'] for r in curated_records}
 
         try:
-            for idx, row in self.skeletons.iterrows():
+            for idx, row in target_skeletons:
                 skeleton = row['skeleton']
-                if skeleton in completed_skeletons:
+                if row_idx is None and skeleton in completed_skeletons:
                     continue
 
                 print(f"\n[{len(curated_records) + 1}/{len(self.skeletons)}] Curating Skeleton: {skeleton}")
@@ -205,11 +214,16 @@ class GenerateData:
                         # Nested list storage is perfectly handled by Arrow/Parquet
                         'Y': Y_vals[:, selected_idx].tolist()
                     }
-                    curated_records.append(record)
+                    existing_entry_idx = next((i for i, r in enumerate(curated_records) if r['skeleton'] == skeleton), None)
+                    if existing_entry_idx is not None:
+                        curated_records[existing_entry_idx] = record
+                        print(f"✓ Updated existing record for skeleton at index {row_idx}!")
+                    else:
+                        curated_records.append(record)
+                        print(f"✓ Progress saved! Total curated: {len(curated_records)}/{len(self.skeletons)}")
 
                     df_to_save = pd.DataFrame(curated_records)
                     df_to_save.to_parquet(output_path, engine='pyarrow', compression='snappy')
-                    print(f"✓ Progress saved! Total curated: {len(curated_records)}/50")
 
         finally:
             # Restore your original configuration rules when the loop exits
@@ -222,6 +236,6 @@ if __name__ == '__main__':
     # generator.clean()
     # b0 = generator.generate_batch(2)
     # generator.generate_all_batches()
-    generator.curate_dataset(difficulty='hard')
+    generator.curate_dataset(difficulty='medium', row_idx=37)
 
 

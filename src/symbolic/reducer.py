@@ -1,9 +1,7 @@
 import sympy as sp
-import config
-from collections import Counter
 from src.utils.sympy_utils import absorb_constants
 from sympy import (Symbol, Abs, conjugate, Pow, log, exp, sqrt, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh,
-                   asinh, acosh, atanh, Rational)
+                   asinh, acosh, atanh)
 
 
 class inv(sp.Function):
@@ -255,36 +253,3 @@ def prune_linear_constants(node):
             for i, child in enumerate(node.children):
                 node.children[i] = prune_linear_constants(child)
     return node
-
-
-
-
-# if __name__ == "__main__":
-#     class MockNode:
-#         def __init__(self, symbol, children=None):
-#             self.symbol = symbol
-#             self.children = children or []
-#
-#     # 1. Build Original Node Branch: C + C * sin(L) * sin(L)
-#     sin1 = MockNode('sin', [MockNode('('), MockNode('L'), MockNode(')')])
-#     sin2 = MockNode('sin', [MockNode('('), MockNode('L'), MockNode(')')])
-#     prod = MockNode('*', [MockNode('C'), MockNode('*'), sin1, MockNode('*'), sin2])
-#     orig_tree = MockNode('+', [MockNode('C'), MockNode('+'), prod])
-#
-#     # 2. Define the SymPy equivalent after simplification/expansion: C * sin(L)**2 + C
-#     C, L = sp.symbols('C L')
-#     sympy_expr = C * sp.sin(L)**2 + C
-#
-#     # Naive count analysis
-#     naive_node_ops = sum(1 for k, v in get_node_profile(orig_tree).items() if k in ('+', '*', 'sin', '**'))
-#     # Wait, let's look at the absolute profiles to see the contrast:
-#     p_node = get_node_profile(orig_tree)
-#     p_sympy = get_sympy_profile(sympy_expr)
-#
-#     print("--- Profile Breakdown ---")
-#     print(f"Original Node Profile:  {dict(p_node)}")
-#     print(f"Simplified SymPy Profile: {dict(p_sympy)}")
-#     print("-" * 30)
-#
-#     mutation_detected = detect_structural_mutation(orig_tree, sympy_expr)
-#     print(f"Was a factorization/structural rewrite detected? {mutation_detected}")

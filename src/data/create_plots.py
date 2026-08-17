@@ -52,12 +52,6 @@ def generate_difficulty_grids(parquet_path, difficulty_name):
             ax.grid(True, linestyle='--', alpha=0.5)
             ax.tick_params(axis='both', which='major', labelsize=8)
 
-        # plt.suptitle(
-        #     f"{difficulty_name.capitalize()} Benchmark Curves: {start_idx + 1} - {start_idx + num_items}",
-        #     fontsize=16,
-        #     fontweight='bold',
-        #     y=0.99
-        # )
         plt.tight_layout()
 
         # Save output high-res figures
