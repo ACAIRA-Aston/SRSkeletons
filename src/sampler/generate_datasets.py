@@ -236,6 +236,6 @@ if __name__ == '__main__':
     # generator.clean()
     # b0 = generator.generate_batch(2)
     # generator.generate_all_batches()
-    generator.curate_dataset(difficulty='medium', row_idx=37)
+    generator.curate_dataset(difficulty='medium')
 
 
