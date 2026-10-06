@@ -195,8 +195,6 @@ def apply_rule(expr_tree, production, grammar, n_u: int):
                     highest_phi.children.remove(next((child for child in highest_phi.children if child.symbol == '*'), None))
                 if L_node or P_node or I_node or W_node:
                     return None
-                # if ctr >= n_u + 1:
-                #     return None
 
         ## Check additive redundancies
         # Climb up to find the immediate τ block containing this target_node
@@ -248,9 +246,6 @@ def apply_rule(expr_tree, production, grammar, n_u: int):
                         if target_node.children[0].symbol == 'L' and P_node:  # Cases like this `P*...*inv(L)`
                             return None
                         highest_psi = highest_psi.parent
-
-
-
     return new_tree
 
 

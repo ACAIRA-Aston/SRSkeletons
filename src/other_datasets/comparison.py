@@ -354,7 +354,7 @@ def compare_datasets(*dataset_tuples):
 # --- Example Usage ---
 if __name__ == '__main__':
     dataset_path = '../data/canonical_skeletons.parquet'
-    dataset_name = 'Ours'
+    dataset_name = 'ExCaUS'
     dataset2_path = 'SeTGAP_skeletons_canonicalized.txt'
     dataset2_name = 'SeTGAP'
     dataset3_path = 'NeSymRes_skeletons_canonicalized.txt'

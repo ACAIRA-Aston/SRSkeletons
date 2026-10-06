@@ -31,8 +31,6 @@ def generate_difficulty_grids(parquet_path, difficulty_name):
 
         for idx in range(rows * cols):
             ax = axes_flat[idx]
-
-            # If we run out of equations before filling the grid (specifically Plot 3)
             if p_cfg['grid'] == (4, 3):
                 if idx == num_items - 1 or idx == num_items + 1:
                     ax.axis('off')  # Hide unused grid panels cleanly
@@ -42,8 +40,6 @@ def generate_difficulty_grids(parquet_path, difficulty_name):
 
             row = subset_df.iloc[idx]
             equation_id = f"{difficulty_name[0].upper()}{start_idx + idx + 1}"
-
-            # Reconstruct numpy arrays from Parquet nested lists
             x_vals = np.array(row['X'])
             y_vals = np.array(row['Y'])
 
@@ -66,8 +62,7 @@ def create_split_datasets_and_grids(parquet_path, difficulty_name):
     """
     Splits each dataset adaptively using percentiles of X:
       - Extrapolation (10%): bottom 5% (left tail) + top 5% (right tail)
-      - Interpolation (90%): middle 80% (between 10th and 90th percentiles)
-
+      - Interpolation (90%): middle 80% (between 5th and 95th percentiles)
     Saves the split data to separate Parquet files and plots the curves with
     extrapolation in orange and interpolation in blue.
     """

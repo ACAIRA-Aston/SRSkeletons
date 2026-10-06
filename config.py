@@ -15,7 +15,7 @@ UNARY_OPERATORS = [
      'square', 'cube', 'powu', 'inv'
 ]
 
-# --- Storage Settings ---
+# Storage Settings
 OUTPUT_DIR = "src/data"
 OUTPUT_FILENAME = "canonical_skeletons.parquet"
 OUTPUT_PATH = os.path.join(OUTPUT_DIR, OUTPUT_FILENAME)
@@ -25,8 +25,7 @@ OUTPUT_PATH2 = os.path.join(OUTPUT_DIR, "canonical_skeletons.parquet")
 if not os.path.exists(OUTPUT_DIR):
     os.makedirs(OUTPUT_DIR)
 
-
-# --- SAMPLING ---
+# SAMPLING
 multiplicative_min = -5
 multiplicative_max = 5
 additive_min = -5
