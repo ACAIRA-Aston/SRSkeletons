@@ -56,7 +56,7 @@ Parameters:
 - `n_d`: Maximum nesting depth of unary operators. Configured by `config.N_D`.
 - `unary_ops`: Unary operator names available to the grammar and used when counting unary-operator constraints. Configured by `config.UNARY_OPERATORS`.
 
-The function returns a set of unique canonical skeleton strings. `main()` stores them in `src/data/canonical_skeletons.parquet` using Snappy compression.
+The function returns a set of unique canonical skeleton strings. `main()` stores them in `src/data/canonical_skeletons.parquet`.
 
 ## Dataset
 
