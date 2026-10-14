@@ -45,8 +45,7 @@ skeletons = generate_exhaustive_skeletons(
     grammar=grammar,
     n_u=config.N_U,
     n_d=config.N_D,
-    unary_ops=config.UNARY_OPERATORS,
-)
+    unary_ops=config.UNARY_OPERATORS,)
 ```
 
 Parameters:
