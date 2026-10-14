@@ -25,15 +25,11 @@ python main.py
 | `src/grammar/cfg.py` | Defines the structural context-free grammar and its production rules. |
 | `src/grammar/engine.py` | Implements derivation-tree nodes, grammar expansion, and rule constraints. |
 | `src/pipeline.py` | `generate_exhaustive_skeletons()` explores valid derivations, simplifies and canonicalizes completed expressions, and returns unique skeletons. |
-| `src/symbolic/reducer.py` | Simplifies expressions and removes algebraic redundancies, including inverse operations. |
-| `src/symbolic/normalizer.py` | Sorts commutative expression terms into a canonical representation. |
 | `src/symbolic/canonicalizer.py` | Maps concrete expressions into abstract canonical forms. |
 | `src/sampler/sample.py` | Samples constants and input points, evaluates skeletons, and creates numerical datasets. |
 | `src/sampler/generate_datasets.py` | Batches skeletons and generates or curates sampled datasets. |
-| `src/sampler/generate_extrapolation_datasets.py` | Generates evaluation data outside the training support. |
 | `src/data/` | Contains the canonical skeleton dataset and derived difficulty, interpolation, extrapolation, and curated Parquet datasets, plus table and plotting scripts. |
-| `src/utils/` | Shared constraint checks, skeleton helpers, and SymPy utilities. |
-| `src/other_datasets/` | Comparison resources for other symbolic-regression datasets. |
+| `src/other_datasets/` | Comparison resources for other SR datasets (NeSymRes and SeTGAP). |
 
 ## Generate Canonical Skeletons
 
