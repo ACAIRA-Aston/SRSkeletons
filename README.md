@@ -88,6 +88,6 @@ If you use this work, please cite:
   year={2026},
   month={},
   pages={},
-  doi={}
+  doi={10.1109/LCI.2026.3753204}
 }
 ```
